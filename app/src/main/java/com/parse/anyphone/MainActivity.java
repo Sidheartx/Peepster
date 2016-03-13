@@ -1,123 +1,97 @@
 package com.parse.anyphone;
 
-import android.content.Intent;
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.Switch;
-import android.widget.Toast;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.view.ViewPager;
+import android.util.Log;
+import android.view.Window;
 
-import com.parse.LogOutCallback;
-import com.parse.ParseException;
-import com.parse.ParseUser;
-import com.parse.SaveCallback;
-
-
-public class MainActivity extends AppCompatActivity {
-    ParseUser user = ParseUser.getCurrentUser();
-    private EditText nameField;
-    private Switch setting1, setting2, setting3;
-
+/**
+ * Created by Siddharth on 3/13/16.
+ */
+public class MainActivity extends FragmentActivity {
+    private static String[] PERMISSIONS_STORAGE = {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE};
+    private static final int REQUEST_STORAGE = 1;
+    public static final String TAG = MainActivity.class.getSimpleName();
+    SectionsPagerAdapter mSectionsPagerAdapter;
+    /**
+     * The {@link ViewPager} that will host the section contents.
+     */
+    ViewPager mViewPager;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         setContentView(R.layout.activity_main);
-
-        Toolbar mToolbar = (Toolbar) findViewById(R.id.toolbar);
-
-        setSupportActionBar(mToolbar);
-        getSupportActionBar().setDisplayShowHomeEnabled(true);
-
-        EditText phoneNumberField = (EditText) findViewById(R.id.phoneNumberField);
-        phoneNumberField.setText(LoginActivity.phoneNumber);
-        nameField = (EditText) findViewById(R.id.nameField);
-
-        setting1 = (Switch) findViewById(R.id.setting1);
-        setting2 = (Switch) findViewById(R.id.setting2);
-        setting3 = (Switch) findViewById(R.id.setting3);
-
-        Button saveSettingsButton = (Button) findViewById(R.id.saveSettingsButton);
-        saveSettingsButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                saveSettings();
-            }
-        });
-
-        if (!ParseUser.getCurrentUser().isNew())
-            checkSettings();
-
+        // Create the adapter that will return a fragment for each of the three
+        // primary sections of the app.
+        mSectionsPagerAdapter = new SectionsPagerAdapter(this,
+                getSupportFragmentManager());
+        // Set up the ViewPager with the sections adapter.
+        mViewPager = (ViewPager) findViewById(R.id.pager);
+        mViewPager.setAdapter(mSectionsPagerAdapter);
+        mViewPager
+                .setOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
+                    @Override
+                    public void onPageSelected(int position) {
+                    }
+                });
     }
-
-    private void checkSettings() {
-        nameField.setText(user.getString("name"));
-        setting1.setChecked(user.getBoolean("setting1"));
-        setting2.setChecked(user.getBoolean("setting2"));
-        setting2.setChecked(user.getBoolean("setting3"));
+    @Override
+    protected void onResume()
+    {
+        super.onResume();
+        {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // Contacts permissions have not been granted.
+                Log.i(TAG, "Location permissions has NOT been granted. Requesting permissions.");
+                requestCameraPermissions();
+            }
+            // Contact permissions have been granted. Show the contacts fragment.
+            Log.i(TAG,
+                    "Contact permissions have already been granted. Displaying contact details.");
+        }
     }
-
-    private void saveSettings() {
-        if (nameField != null) {
-            user.put("name", nameField.getText().toString());
-
-            if (setting1.isChecked()) {
-                user.put("setting1", true);
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        if (requestCode == REQUEST_STORAGE) {
+            // BEGIN_INCLUDE(permission_result)
+            // Received permission result for camera permission.
+            Log.i(TAG, "Received response for Camera permission request.");
+            // Check if the only required permission has been granted
+            if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Camera permission has been granted, preview can be displayed
+                // Checks the last saved location to show cached data if it's available
             }
-            if (setting2.isChecked()) {
-                user.put("setting2", true);
-            }
-            if (setting3.isChecked()) {
-                user.put("setting3", true);
-            }
-
-            user.saveInBackground(new SaveCallback() {
-                @Override
-                public void done(ParseException e) {
-                    Toast.makeText(getApplicationContext(), "Saved Successfully",
-                            Toast.LENGTH_SHORT).show();
-                }
-            });
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
+    }
+    private void requestCameraPermissions() {
+        // BEGIN_INCLUDE(contacts_permission_request)
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                Manifest.permission.CAMERA)) {
+            // Provide an additional rationale to the user if the permission was not granted
+            // and the user would benefit from additional context for the use of the permission.
+            // For example, if the request has been denied previously.
+            Log.i(TAG,
+                    "Displaying contacts permission rationale to provide additional context.");
+            // Display a SnackBar with an explanation and a button to trigger the request.
+            ActivityCompat
+                    .requestPermissions(MainActivity.this, PERMISSIONS_STORAGE,
+                            REQUEST_STORAGE);
         } else {
-            Toast.makeText(getApplicationContext(), "Please enter a username.",
-                    Toast.LENGTH_SHORT).show();
+            // Contact permissions have not been granted yet. Request them directly.
+            ActivityCompat.requestPermissions(this, PERMISSIONS_STORAGE, REQUEST_STORAGE);
         }
-    }
-
-    private void logout() {
-        user.logOutInBackground(new LogOutCallback() {
-            @Override
-            public void done(ParseException e) {
-                Intent i = new Intent(MainActivity.this, LoginActivity.class);
-                startActivity(i);
-                finish();
-            }
-        });
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.logout) {
-            logout();
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
     }
 }

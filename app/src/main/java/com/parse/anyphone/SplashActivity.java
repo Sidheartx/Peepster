@@ -8,6 +8,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import com.parse.ParseUser;
+import com.parse.anyphone.MainActivity;
+import com.parse.anyphone.R;
 
 
 public class SplashActivity extends AppCompatActivity {

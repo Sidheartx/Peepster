@@ -8,4 +8,6 @@
     <string name="logo">Logo</string>
     <string name="number_default">555-333-6726</string>
     <string name="copyright">Copyright (c) 2015 Parse. All rights reserved.</string>
+    <string name="title_section_1">Feeds</string>
+    <string name="title_section_2">Inbox</string>
 </resources>
